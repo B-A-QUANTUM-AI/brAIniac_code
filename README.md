@@ -1,0 +1,10 @@
+Rules for brAiniac code base
+ - No variable or function name abbreviation
+ - Names should be understandable on reading
+ - Only snake case style is to be used
+ - For constnats use snake case but in capital letters all through
+ - Comments must be used
+ - Ensure all packages are installed locally
+ - Dataset folder must be organized in alphabetical order
+ - 
+ - 

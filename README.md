@@ -6,5 +6,6 @@ Rules for brAiniac code base
  - Comments must be used
  - Ensure all packages are installed locally
  - Dataset folder must be organized in alphabetical order
- - 
+ - All functions used should return data in form of a dictionary
+ - All dictionary keys must be all in capital letters format
  - 

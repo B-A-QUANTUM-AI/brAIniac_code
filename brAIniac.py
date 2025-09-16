@@ -67,3 +67,75 @@ def data_preparation():
     except:
         print("An unexpected error during in data preparation")
         return None
+    
+def data_loading_and_preprocessing(prepared_data):
+    
+    try:
+        print("=" * 100)
+        print("Loading Data ...")
+        
+	#Loads Keras function to read images directly from the image dataset folder
+        from keras.utils import image_dataset_from_directory
+        
+        TRAIN_DIRECTORY = prepared_data["TRAIN_DIRECTORY"]
+        TEST_DIRECTORY = prepared_data["TEST_DIRECTORY"]
+        IMAGE_SIZE = prepared_data["IMAGE_SIZE"]
+        BATCH_SIZE = prepared_data["BATCH_SIZE"]
+        SEED = prepared_data["SEED"]
+        
+
+        training_dataset = image_dataset_from_directory (
+            TRAIN_DIRECTORY,               
+            labels="inferred",          
+            label_mode="categorical",      
+            color_mode="rgb",               
+            image_size= IMAGE_SIZE,         
+            batch_size=BATCH_SIZE,         
+            shuffle=True,                 # randomize image order
+            seed=SEED,                     
+            validation_split= 0.1,        # 10% of the data is reserved for validation  
+            subset="training"             
+        )            
+
+        validation_dataset = image_dataset_from_directory (
+            TRAIN_DIRECTORY, 
+            labels="inferred",
+            label_mode="categorical",
+            color_mode="rgb", 
+            image_size= IMAGE_SIZE,
+            batch_size=BATCH_SIZE,
+            shuffle=False,                   # for steady validation batches every run      
+            seed=SEED,
+            validation_split= 0.1,
+            subset="validation"                    
+        )
+
+        testing_dataset = image_dataset_from_directory (
+            TEST_DIRECTORY, 
+            labels="inferred",
+            label_mode="categorical",
+            color_mode="rgb", 
+            image_size= IMAGE_SIZE,
+            batch_size=BATCH_SIZE,
+            shuffle=False                   
+        )
+
+        print("Class order:", training_dataset.class_names)        
+        
+
+        preprocessed_data = {
+            "TRAINING_DATASET" : training_dataset,
+            "VALIDATION_DATASET" : validation_dataset,
+            "TESTING_DATASET" : testing_dataset
+        }
+        
+
+        print("Data has been loaded")
+        print("=" * 100)
+
+        return preprocessed_data
+    
+    
+    except:
+        print("Unexpected error in Data loading function")
+        return None

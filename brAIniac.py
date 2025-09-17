@@ -300,4 +300,36 @@ def develop_cnn_model(prepared_data):
         print("Error in developing cn model ")
         return None
     
+     #function for training 
     
+        
+def train_cnn_model(augumented_data):
+    
+    try:     
+        print("=" * 100)
+        print("Training the CNN model...")
+           
+        global cnn_model
+        
+        MODEL_FILE = "brainiac_cnn_86.keras"
+        
+        training_dataset = augumented_data["TRAINING_DATASET"]
+        validation_dataset = augumented_data["VALIDATION_DATASET"]
+
+        from keras.models import Sequential
+
+        trained_cnn_model_history = cnn_model.fit(training_dataset, validation_data=validation_dataset,  epochs=45, verbose=1)
+        
+        cnn_model.save(MODEL_FILE)
+        
+        print("Epoch metrics tracked are: ",trained_cnn_model_history.history.keys())
+        
+       
+        print("Training completed")
+        print("=" * 100)
+        
+        return trained_cnn_model_history
+        
+    except:
+        raise Exception ("Unable to train model")
+        return None

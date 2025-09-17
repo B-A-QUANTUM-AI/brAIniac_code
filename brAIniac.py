@@ -139,3 +139,73 @@ def data_loading_and_preprocessing(prepared_data):
     except:
         print("Unexpected error in Data loading function")
         return None
+    
+    
+    
+def data_augmentation(preprocessed_data):
+    
+    try:       
+        print("=" * 100)
+        print("Augmenting imaes")
+
+        training_dataset = preprocessed_data["TRAINING_DATASET"]
+        validation_dataset = preprocessed_data["VALIDATION_DATASET"]
+        testing_dataset = preprocessed_data["TESTING_DATASET"]
+    
+        from keras import layers
+            
+        rescale_pixels = layers.Rescaling(1./255)
+                
+        from keras.models import Sequential
+             
+        data_augmentation = Sequential (
+            [
+                layers.RandomContrast(0.1),       
+                layers.RandomRotation(0.05),            
+                layers.RandomZoom(0.10),               
+                layers.RandomTranslation(0.05, 0.05)    
+            ],
+            name= "augment"                             
+        )
+               
+        training_dataset = training_dataset.map(
+            lambda x, y :    (
+                # applying augmentation to data
+                # applied normalization and augmentation to images in this dataset || y is the label so remains same is the name of the image 
+                rescale_pixels(data_augmentation(x)),  y
+            )    
+        )
+
+        # keep preprocessde data in ram for easy fetching and fine tunes performance using autotune
+        training_dataset = training_dataset.cache().prefetch(AUTOTUNE)       
+
+        validation_dataset = validation_dataset.map(
+            lambda x, y : (
+                    rescale_pixels(x)  , y 
+            ) 
+        )
+
+        validation_dataset = validation_dataset.cache().prefetch(AUTOTUNE)   
+       
+        testing_dataset = testing_dataset.map(
+            lambda x, y : (
+                rescale_pixels(x)  , y 
+            ) 
+        )
+
+        testing_dataset = testing_dataset.cache().prefetch(AUTOTUNE)      
+        
+        augumented_data = {
+            "TRAINING_DATASET" : training_dataset,
+            "VALIDATION_DATASET" : validation_dataset,
+            "TESTING_DATASET" : testing_dataset
+        }    
+       
+        print("Augmentation done")
+        print("=" * 100)
+        
+        return augumented_data
+
+    except:
+        print("Unexpected error in data augmentation function")
+        return None  

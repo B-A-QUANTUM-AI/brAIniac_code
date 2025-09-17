@@ -209,3 +209,95 @@ def data_augmentation(preprocessed_data):
     except:
         print("Unexpected error in data augmentation function")
         return None  
+    
+
+def develop_cnn_model(prepared_data):
+    
+    try :
+
+        print("=" * 100)
+        print("Developing the Convolutional Neural Network model...")
+
+        global cnn_model
+        
+        from keras.layers import Conv2D, MaxPooling2D , Flatten , Dense, Dropout, BatchNormalization
+
+
+        CLASS_NAMES = prepared_data["CLASS_NAMES"]
+        
+        filters = 32
+        
+        for i in range(3):
+            
+            if i ==0 :
+                cnn_model.add(
+                    Conv2D(
+                        # activation - relu - to allow model learn more complex mpatterns || 
+                        filters, (3,3) , input_shape = (512,512,3), padding="same", activation = "relu" 
+                    )
+                )
+
+
+                cnn_model.add(
+                    MaxPooling2D (
+                        # reduce spatial dimension of images by half on width and height
+                        pool_size = (2, 2)
+                    )   
+                )
+                
+
+                filters *= 2
+            else :
+
+                cnn_model.add(
+                    Conv2D(
+                        # activation - relu - to allow model learn more complex mpatterns || 
+                        filters, (3,3) , padding="same", activation = "relu" 
+                    )
+                )
+
+
+                cnn_model.add(
+                    MaxPooling2D (
+                        # reduce spatial dimension of images by half on width and height
+                        pool_size = (2, 2)
+                    )   
+                )
+                
+
+                filters *= 2 
+                
+                
+                
+                
+
+        # flatten to 1D vector for easy use by dense layer
+        cnn_model.add(Flatten())
+
+        # dense layer with 128 neurons to learn high combo features 
+        cnn_model.add( Dense (units = 128, activation = "relu")   )
+
+        # drop 50% units to avoidoverfitting
+        cnn_model.add(Dropout(0.5))
+
+        # dense to output
+        cnn_model.add( Dense(len(CLASS_NAMES), activation="softmax")  )
+            
+        from keras import metrics
+        from keras.optimizers import Adam
+
+        #adam - adaptive optimization algorithm
+        cnn_model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy", metrics.Precision(name="precision"), metrics.Recall(name="recall")]  )
+
+
+        print("Convolutional Neural Network model created")
+        print("=" * 100)
+            
+   
+        return cnn_model
+
+    except:
+        print("Error in developing cn model ")
+        return None
+    
+    

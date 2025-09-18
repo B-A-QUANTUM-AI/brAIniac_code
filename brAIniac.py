@@ -333,3 +333,56 @@ def train_cnn_model(augumented_data):
     except:
         raise Exception ("Unable to train model")
         return None
+    
+    
+    
+def evaluation_and_prediction(augumented_data): # evaluate and predict on test data using augumented data
+    
+     try:
+        
+        print("=" * 100)
+        print("Evaluating and predicting on test data...")
+        
+        global cnn_model # access the global cnn_model variable
+        
+        testing_dataset = augumented_data["TESTING_DATASET"] # get test data from augumented data
+        
+        import matplotlib.pyplot as plt
+        
+        import numpy as np
+
+        loss, accuracy, precision, recall = cnn_model.evaluate(testing_dataset, verbose=0) # verbose 0 to avoid too much output
+        # Loss : Measures how far off the model's predictions are from the actual labels. Lower is better.
+        # Accuracy : Indicates the proportion of correct predictions made by the model. Higher is better.
+        # Precision : Measures the accuracy of positive predictions. Higher is better.  
+        # Recall : Measures the model's ability to find all relevant cases (true positives). Higher is better.
+        # verbose = 0 to avoid too much output
+        # This method tests the model on new, unseen data (in this case, testing_dataset) and returns the loss,accuracy, precision, and recall metrics.
+
+
+        print(f"Accuracy: {accuracy}, Precision(no of correct predictions): {precision}, recall :  {recall}") # print evaluation metrics 
+        
+        
+        predictions = cnn_model.predict(testing_dataset, verbose=1) # verbose 1 to show progress bar
+        # This method generates output predictions for the input samples in testing_dataset. The output is typically a probability distribution over the classes for each input sample.
+        # verbose = 1 to show progress bar
+        
+        evaluated_data = { # store evaluation metrics and predictions in a dictionary
+            "LOSS" :loss, 
+            "ACCURACY" : accuracy, 
+            "PRECISION" :precision, 
+            "RECALL" : recall, 
+            "PREDICTIONS" : predictions
+        }
+        
+        
+        
+        print("Prediction task done")
+        print("=" * 100)
+        
+        return evaluated_data # return the dictionary
+        
+        
+     except:
+        print("Unknown Error occured in evaluation and prediction function")
+        return None

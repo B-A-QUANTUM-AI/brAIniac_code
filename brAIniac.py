@@ -55,7 +55,6 @@ def data_preparation():
            # "WEIGHT_COUNTS" : WEIGHT_COUNTS
         }
         
-        
         print("Fetching and preparing task done")
         print("=" * 100)
         
@@ -83,7 +82,6 @@ def data_loading_and_preprocessing(prepared_data):
         BATCH_SIZE = prepared_data["BATCH_SIZE"]
         SEED = prepared_data["SEED"]
         
-
         training_dataset = image_dataset_from_directory (
             TRAIN_DIRECTORY,               
             labels="inferred",          
@@ -122,24 +120,20 @@ def data_loading_and_preprocessing(prepared_data):
 
         print("Class order:", training_dataset.class_names)        
         
-
         preprocessed_data = {
             "TRAINING_DATASET" : training_dataset,
             "VALIDATION_DATASET" : validation_dataset,
             "TESTING_DATASET" : testing_dataset
         }
         
-
         print("Data has been loaded")
         print("=" * 100)
 
         return preprocessed_data
     
-    
     except:
         print("Unexpected error in Data loading function")
         return None
-    
     
     
 def data_augmentation(preprocessed_data):
@@ -222,7 +216,6 @@ def develop_cnn_model(prepared_data):
         
         from keras.layers import Conv2D, MaxPooling2D , Flatten , Dense, Dropout, BatchNormalization
 
-
         CLASS_NAMES = prepared_data["CLASS_NAMES"]
         
         filters = 32
@@ -237,7 +230,6 @@ def develop_cnn_model(prepared_data):
                     )
                 )
 
-
                 cnn_model.add(
                     MaxPooling2D (
                         # reduce spatial dimension of images by half on width and height
@@ -245,7 +237,6 @@ def develop_cnn_model(prepared_data):
                     )   
                 )
                 
-
                 filters *= 2
             else :
 
@@ -256,21 +247,15 @@ def develop_cnn_model(prepared_data):
                     )
                 )
 
-
                 cnn_model.add(
                     MaxPooling2D (
                         # reduce spatial dimension of images by half on width and height
                         pool_size = (2, 2)
                     )   
                 )
-                
 
                 filters *= 2 
                 
-                
-                
-                
-
         # flatten to 1D vector for easy use by dense layer
         cnn_model.add(Flatten())
 
@@ -293,7 +278,6 @@ def develop_cnn_model(prepared_data):
         print("Convolutional Neural Network model created")
         print("=" * 100)
             
-   
         return cnn_model
 
     except:
@@ -324,7 +308,6 @@ def train_cnn_model(augumented_data):
         
         print("Epoch metrics tracked are: ",trained_cnn_model_history.history.keys())
         
-       
         print("Training completed")
         print("=" * 100)
         
@@ -333,8 +316,6 @@ def train_cnn_model(augumented_data):
     except:
         raise Exception ("Unable to train model")
         return None
-    
-    
     
 def evaluation_and_prediction(augumented_data): # evaluate and predict on test data using augumented data
     
@@ -359,9 +340,7 @@ def evaluation_and_prediction(augumented_data): # evaluate and predict on test d
         # verbose = 0 to avoid too much output
         # This method tests the model on new, unseen data (in this case, testing_dataset) and returns the loss,accuracy, precision, and recall metrics.
 
-
         print(f"Accuracy: {accuracy}, Precision(no of correct predictions): {precision}, recall :  {recall}") # print evaluation metrics 
-        
         
         predictions = cnn_model.predict(testing_dataset, verbose=1) # verbose 1 to show progress bar
         # This method generates output predictions for the input samples in testing_dataset. The output is typically a probability distribution over the classes for each input sample.
@@ -375,20 +354,17 @@ def evaluation_and_prediction(augumented_data): # evaluate and predict on test d
             "PREDICTIONS" : predictions
         }
         
-        
-        
         print("Prediction task done")
         print("=" * 100)
         
         return evaluated_data # return the dictionary
-        
         
      except:
         print("Unknown Error occured in evaluation and prediction function")
         return None
 
         
-        def model_performance_and_analysis(evaluated_data, augumented_data, data_preparation_details) : 
+def model_performance_and_analysis(evaluated_data, augumented_data, data_preparation_details) : 
     try:
         predictions = evaluated_data["PREDICTIONS"]
         
@@ -411,9 +387,49 @@ def evaluation_and_prediction(augumented_data): # evaluate and predict on test d
         the_classification_report = classification_report(y_actual_truths, y_predictions, target_names=CLASS_NAMES, digits=4)
         
         print("The classifcation report is as follows:   \n", the_classification_report)
-        
-        
-        
+         
     except:
         print("Error in evaluating model performance")
 
+
+def predict_on_single_image(augumented_data, data_preparation_details):
+    try:
+        testing_dataset = augumented_data["TESTING_DATASET"] # testing dataset
+        CLASS_NAMES = data_preparation_details["CLASS_NAMES"] # class names in the dataset
+        BATCH_SIZE = data_preparation_details["BATCH_SIZE"] # batch size used during data loading
+        
+        import numpy as np
+        
+        while True : 
+            i = np.random.randint(0, BATCH_SIZE) # random batch index
+            
+            for images, image_label in testing_dataset.take(i): # take the ith batch from the test dataset
+            
+                random_index = np.random.randint(0, images.shape[0]) # random image index within the batch
+                random_image = images[random_index].numpy() # get the random image from the batch and convert to numpy array
+                true_onehot = image_label[random_index].numpy() # get the true one-hot encoded label for the random image
+                true_index = int(np.argmax(true_onehot)) # convert one-hot encoded label to class index
+                true_name = CLASS_NAMES[true_index] # get the true class name from class index
+                
+            image_probability = cnn_model.predict(np.expand_dims(random_image, axis=0), verbose=0)[0] # predict class probabilities for the random image by expanding dimensions to match model input shape
+            
+            prediction_index = int(np.argmax(image_probability)) # get the predicted class index by taking the index of the max probability
+            prediction_name = CLASS_NAMES[prediction_index] # get the predicted class name from class index
+            confidence_score = float(image_probability[prediction_index]) # get the confidence score for the predicted class
+            
+            import matplotlib.pyplot as plt
+            
+            plt.imshow(random_image) # display the random image
+            plt.axis("off") # turn off axis
+            plt.title(f"Predicted: {prediction_name} || Confidence: {confidence_score:1%} || Actual Class: {true_name}") # set title with predicted class, confidence score, and true class name
+            plt.show() # show the image
+        
+            option = input("Do you want to predict another random image (Say No to exit):   ").lower()
+            
+            if option == "no":
+                print("Thanks for using brainiac")
+                break
+  
+    except:
+        print("unexpected error in predicting a single image function")
+    

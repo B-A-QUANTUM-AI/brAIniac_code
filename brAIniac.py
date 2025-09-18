@@ -386,3 +386,34 @@ def evaluation_and_prediction(augumented_data): # evaluate and predict on test d
      except:
         print("Unknown Error occured in evaluation and prediction function")
         return None
+
+        
+        def model_performance_and_analysis(evaluated_data, augumented_data, data_preparation_details) : 
+    try:
+        predictions = evaluated_data["PREDICTIONS"]
+        
+        testing_dataset = augumented_data["TESTING_DATASET"]
+        
+        CLASS_NAMES = data_preparation_details["CLASS_NAMES"]
+        
+        import numpy as np
+        
+        from sklearn.metrics import confusion_matrix, classification_report
+        
+        y_predictions = np.argmax(predictions, axis=1)
+        
+        y_actual_truths = np.concatenate([np.argmax(y.numpy(), axis=1) for _, y in testing_dataset])
+        
+        the_confusion_matrix = confusion_matrix(y_actual_truths, y_predictions)
+        
+        print("The confusion matrix is as follows below: \n", the_confusion_matrix)
+        
+        the_classification_report = classification_report(y_actual_truths, y_predictions, target_names=CLASS_NAMES, digits=4)
+        
+        print("The classifcation report is as follows:   \n", the_classification_report)
+        
+        
+        
+    except:
+        print("Error in evaluating model performance")
+

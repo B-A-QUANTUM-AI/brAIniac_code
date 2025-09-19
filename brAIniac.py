@@ -1,27 +1,33 @@
-# import sequential class and creat a sequential model to be acessed in necessary functions
+# imports the sequential class to build neural networks layer by layer
 from keras.models import Sequential
+
+# create the sequential cnn model
 cnn_model= Sequential()
+
 # tf for performance utilities
 import os, random, numpy as np, tensorflow as tf
 
 # global seed variable used to ensure consistent shuffle/splits per run
 SEED = 2025
 
+# randomize seeds using python's in built random, numpy's random and tensorflow's random
 random.seed(SEED)
 np.random.seed(SEED)
 tf.random.set_seed(SEED)
 
-# use tf autotune to fine tune performance on local machine
+# constant telling tensor flow to automatically optimize data loading performance
 AUTOTUNE = tf.data.AUTOTUNE
 
+# data preparation function
 def data_preparation():
     try:
         print("=" * 100)
         print("Fetching and preparing the Data...")
        
         import os
-        
-        BASE_DIRECTORY = "C:/Users/orera/Downloads/brisc2025/classification_task"
+		# change name to your pc name to match location of your dataset directory on local computer
+        computer_name = "orera"
+        BASE_DIRECTORY = f"C:/Users/{computer_name}/Downloads/brisc2025/classification_task"
         
         if not os.path.exists(BASE_DIRECTORY):
             raise FileNotFoundError("Classification folder was not found")
@@ -34,16 +40,17 @@ def data_preparation():
         
         if not os.path.exists(TEST_DIRECTORY):
             raise FileNotFoundError("Test folder was not found")
-        
+
+		# set image size for every iamge in dataset
         IMAGE_SIZE = (224,224)
-        
-        # number of images per training babatch
+
+		# no of images to process at a time
         BATCH_SIZE = 32
-     
+
+		# names of tumors according to the folders alphabetical order
         CLASS_NAMES = ["glioma", "meningioma", "no_tumor", "pituitary"]
-        
-      #  WEIGHT_COUNTS = {cls: len(os.listdir(os.path.join(TRAIN_DIRECTORY, cls))) for cls in CLASS_NAMES}
-        
+
+		# information to be returned from the function
         data_preparation_details = {
             "BASE_DIRECTORY" : BASE_DIRECTORY,
             "TRAIN_DIRECTORY" : TRAIN_DIRECTORY,
@@ -51,8 +58,7 @@ def data_preparation():
             "IMAGE_SIZE" : IMAGE_SIZE,
             "BATCH_SIZE" : BATCH_SIZE,
             "SEED" : SEED,
-            "CLASS_NAMES" : CLASS_NAMES,
-           # "WEIGHT_COUNTS" : WEIGHT_COUNTS
+            "CLASS_NAMES" : CLASS_NAMES
         }
         
         print("Fetching and preparing task done")
@@ -66,33 +72,36 @@ def data_preparation():
     except:
         print("An unexpected error during in data preparation")
         return None
-    
+
+# data loading function
 def data_loading_and_preprocessing(prepared_data):
     
     try:
         print("=" * 100)
         print("Loading Data ...")
         
-	#Loads Keras function to read images directly from the image dataset folder
+		#Loads Keras function to read images directly from the image dataset folder
         from keras.utils import image_dataset_from_directory
-        
+
+		# collect neccessary info from previous function
         TRAIN_DIRECTORY = prepared_data["TRAIN_DIRECTORY"]
         TEST_DIRECTORY = prepared_data["TEST_DIRECTORY"]
         IMAGE_SIZE = prepared_data["IMAGE_SIZE"]
         BATCH_SIZE = prepared_data["BATCH_SIZE"]
         SEED = prepared_data["SEED"]
-        
+
+		# create data set by using the function image dataset from directory in the Keras.utils 
         training_dataset = image_dataset_from_directory (
-            TRAIN_DIRECTORY,               
-            labels="inferred",          
-            label_mode="categorical",      
-            color_mode="rgb",               
-            image_size= IMAGE_SIZE,         
-            batch_size=BATCH_SIZE,         
-            shuffle=True,                 # randomize image order
-            seed=SEED,                     
-            validation_split= 0.1,        # 10% of the data is reserved for validation  
-            subset="training"             
+            TRAIN_DIRECTORY,               	# directory to train data
+            labels="inferred",          	# infer the labels and truths from the class folders
+            label_mode="categorical",      	# to create one - hot labels styles such as [0,1,0,0] - representing an image is from meningioma class
+            color_mode="rgb",               # set the color format
+            image_size= IMAGE_SIZE,         # resize all images
+            batch_size=BATCH_SIZE,         	# no of images per batch
+            shuffle=True,                 	# randomize image order
+            seed=SEED,                     	# make the shuffle reproducable
+            validation_split= 0.1,        	# reserve 10% of the data is reserved for validation  
+            subset="training"             	# theis current dataset is for training not the validation
         )            
 
         validation_dataset = image_dataset_from_directory (
@@ -104,8 +113,8 @@ def data_loading_and_preprocessing(prepared_data):
             batch_size=BATCH_SIZE,
             shuffle=False,                   # for steady validation batches every run      
             seed=SEED,
-            validation_split= 0.1,
-            subset="validation"                    
+            validation_split= 0.1,		
+            subset="validation"          	 # this subset is for validation so the reserved 10 %           
         )
 
         testing_dataset = image_dataset_from_directory (
@@ -135,23 +144,26 @@ def data_loading_and_preprocessing(prepared_data):
         print("Unexpected error in Data loading function")
         return None
     
-    
+# data augmentation function for augmenting the images
 def data_augmentation(preprocessed_data):
     
     try:       
         print("=" * 100)
         print("Augmenting imaes")
 
+		# collect neccessary info from previous function
         training_dataset = preprocessed_data["TRAINING_DATASET"]
         validation_dataset = preprocessed_data["VALIDATION_DATASET"]
         testing_dataset = preprocessed_data["TESTING_DATASET"]
     
         from keras import layers
-            
+
+		# normalization algorithm for images
         rescale_pixels = layers.Rescaling(1./255)
                 
         from keras.models import Sequential
-             
+
+		# create a sequential model to create an augmentation alogrithm
         data_augmentation = Sequential (
             [
                 layers.RandomContrast(0.1),       
@@ -161,7 +173,8 @@ def data_augmentation(preprocessed_data):
             ],
             name= "augment"                             
         )
-               
+
+		# apply the augmentation and normalization to training dataset
         training_dataset = training_dataset.map(
             lambda x, y :    (
                 # applying augmentation to data
@@ -173,6 +186,7 @@ def data_augmentation(preprocessed_data):
         # keep preprocessde data in ram for easy fetching and fine tunes performance using autotune
         training_dataset = training_dataset.cache().prefetch(AUTOTUNE)       
 
+		# just normalize images
         validation_dataset = validation_dataset.map(
             lambda x, y : (
                     rescale_pixels(x)  , y 
@@ -180,7 +194,8 @@ def data_augmentation(preprocessed_data):
         )
 
         validation_dataset = validation_dataset.cache().prefetch(AUTOTUNE)   
-       
+
+		# normalize test data
         testing_dataset = testing_dataset.map(
             lambda x, y : (
                 rescale_pixels(x)  , y 
@@ -204,7 +219,7 @@ def data_augmentation(preprocessed_data):
         print("Unexpected error in data augmentation function")
         return None  
     
-
+# developing the sequentioal model by layers
 def develop_cnn_model(prepared_data):
     
     try :
@@ -217,61 +232,51 @@ def develop_cnn_model(prepared_data):
         from keras.layers import Conv2D, MaxPooling2D , Flatten , Dense, Dropout
 
         CLASS_NAMES = prepared_data["CLASS_NAMES"]
-        
+
+		# number of filters needed to learn from each image
         filters = 32
-        
+
+		# loop 3 times to create 3 blocks of convolution and pooling layers
         for i in range(3):
+        
+            cnn_model.add(
+				# examines each image and tries to learn features from each image
+                Conv2D(
+                    # activation - relu - to allow model learn more complex mpatterns || 
+					# (3,3) is the size of each filter 
+                    filters, (3,3) , input_shape = (224,224,3), activation = "relu" 
+                )
+            )
+
+            cnn_model.add(
+				# collects all learned features together
+                MaxPooling2D (
+                    # reduce spatial dimension of images by half on width and height
+                    pool_size = (2, 2)
+                )   
+            )
+
+			# increase no  of filters by 2 
+            filters *= 2
             
-            if i ==0 :
-                cnn_model.add(
-                    Conv2D(
-                        # activation - relu - to allow model learn more complex mpatterns || 
-                        filters, (3,3) , input_shape = (512,512,3), padding="same", activation = "relu" 
-                    )
-                )
-
-                cnn_model.add(
-                    MaxPooling2D (
-                        # reduce spatial dimension of images by half on width and height
-                        pool_size = (2, 2)
-                    )   
-                )
-                
-                filters *= 2
-            else :
-
-                cnn_model.add(
-                    Conv2D(
-                        # activation - relu - to allow model learn more complex mpatterns || 
-                        filters, (3,3) , padding="same", activation = "relu" 
-                    )
-                )
-
-                cnn_model.add(
-                    MaxPooling2D (
-                        # reduce spatial dimension of images by half on width and height
-                        pool_size = (2, 2)
-                    )   
-                )
-
-                filters *= 2 
                 
         # flatten to 1D vector for easy use by dense layer
         cnn_model.add(Flatten())
 
-        # dense layer with 128 neurons to learn high combo features 
+        # dense layer with 128 neurons to learn high combo features sing activation relu
         cnn_model.add( Dense (units = 128, activation = "relu")   )
 
         # drop 50% units to avoidoverfitting
         cnn_model.add(Dropout(0.5))
 
-        # dense to output
+        # dense to output for each of the 4 classes
         cnn_model.add( Dense(len(CLASS_NAMES), activation="softmax")  )
             
         from keras import metrics
         from keras.optimizers import Adam
 
         #adam - adaptive optimization algorithm
+		# indicate performance metrics to track
         cnn_model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy", metrics.Precision(name="precision"), metrics.Recall(name="recall")]  )
 
 
@@ -283,10 +288,9 @@ def develop_cnn_model(prepared_data):
     except:
         print("Error in developing cn model ")
         return None
+
     
-     #function for training 
-    
-        
+# function for training the model      
 def train_cnn_model(augumented_data):
     
     try:     
@@ -294,7 +298,8 @@ def train_cnn_model(augumented_data):
         print("Training the CNN model...")
            
         global cnn_model
-        
+
+		# store the file name of a previous model save
         MODEL_FILE = "brainiac_cnn_86.keras"
         
         training_dataset = augumented_data["TRAINING_DATASET"]
@@ -302,10 +307,13 @@ def train_cnn_model(augumented_data):
 
         from keras.models import Sequential
 
-        trained_cnn_model_history = cnn_model.fit(training_dataset, validation_data=validation_dataset,  epochs=45, verbose=1)
-        
+		# a historical version of the trained model is to be stored
+        trained_cnn_model_history = cnn_model.fit(training_dataset, validation_data=validation_dataset,  epochs=20, verbose=1)
+
+		# save the current model under the file name
         cnn_model.save(MODEL_FILE)
-        
+
+		# from the historical version of the model display metrics tracked
         print("Epoch metrics tracked are: ",trained_cnn_model_history.history.keys())
         
         print("Training completed")
@@ -316,7 +324,8 @@ def train_cnn_model(augumented_data):
     except:
         raise Exception ("Unable to train model")
         return None
-    
+
+# function to evaluate and predict
 def evaluation_and_prediction(augumented_data): # evaluate and predict on test data using augumented data
     
      try:
@@ -363,27 +372,31 @@ def evaluation_and_prediction(augumented_data): # evaluate and predict on test d
         print("Unknown Error occured in evaluation and prediction function")
         return None
 
-        
+
+# function to evaluate the cnn model operformance
 def model_performance_and_analysis(evaluated_data, augumented_data, data_preparation_details) : 
     try:
+		# collect necessaryu infor fromprevious functions
         predictions = evaluated_data["PREDICTIONS"]
-        
         testing_dataset = augumented_data["TESTING_DATASET"]
-        
         CLASS_NAMES = data_preparation_details["CLASS_NAMES"]
         
         import numpy as np
         
         from sklearn.metrics import confusion_matrix, classification_report
-        
+
+		# converts predictions to point numbers 
         y_predictions = np.argmax(predictions, axis=1)
-        
+
+		# buil an array of truth labels, for loop to go through dataset by batches and numpy to convert to an array
         y_actual_truths = np.concatenate([np.argmax(y.numpy(), axis=1) for _, y in testing_dataset])
-        
+
+		# plot confusion matrix
         the_confusion_matrix = confusion_matrix(y_actual_truths, y_predictions)
         
         print("The confusion matrix is as follows below: \n", the_confusion_matrix)
-        
+
+		# fetch classification report
         the_classification_report = classification_report(y_actual_truths, y_predictions, target_names=CLASS_NAMES, digits=4)
         
         print("The classifcation report is as follows:   \n", the_classification_report)
@@ -392,8 +405,10 @@ def model_performance_and_analysis(evaluated_data, augumented_data, data_prepara
         print("Error in evaluating model performance")
 
 
+# predict on a single image function 
 def predict_on_single_image(augumented_data, data_preparation_details):
     try:
+		
         testing_dataset = augumented_data["TESTING_DATASET"] # testing dataset
         CLASS_NAMES = data_preparation_details["CLASS_NAMES"] # class names in the dataset
         BATCH_SIZE = data_preparation_details["BATCH_SIZE"] # batch size used during data loading
@@ -423,9 +438,11 @@ def predict_on_single_image(augumented_data, data_preparation_details):
             plt.axis("off") # turn off axis
             plt.title(f"Predicted: {prediction_name} || Confidence: {confidence_score:1%} || Actual Class: {true_name}") # set title with predicted class, confidence score, and true class name
             plt.show() # show the image
-        
+
+			# ask user if they wish to predict on a seperate test image
             option = input("Do you want to predict another random image (Say No to exit):   ").lower()
-            
+
+			# stop program only if user says no
             if option == "no":
                 print("Thanks for using brainiac")
                 break

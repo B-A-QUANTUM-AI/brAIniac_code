@@ -450,3 +450,46 @@ def predict_on_single_image(augumented_data, data_preparation_details):
     except:
         print("unexpected error in predicting a single image function")
     
+
+
+def main():
+    try:
+        
+        import os
+        
+        MODEL_FILE = "brainiac_cnn_86.keras"
+        
+        # call depenedent and helper functions
+        prepared_data_details = data_preparation()
+        preprocessed_data = data_loading_and_preprocessing(prepared_data_details)
+        augmented_data = data_augmentation(preprocessed_data)
+        
+        global cnn_model
+        
+        if os.path.exists(MODEL_FILE):
+            print("=" * 100)
+            print(f"Loading exiting model from {MODEL_FILE}")
+            
+            from keras.models import load_model
+
+            cnn_model = load_model(MODEL_FILE)
+            
+            print(f"Model has been loaded from {MODEL_FILE}")
+        
+        else:
+  
+            cnn_model = develop_cnn_model(prepared_data_details)
+            history = train_cnn_model(augmented_data)
+            
+            
+        evaluated_test_data = evaluation_and_prediction (augmented_data)
+        model_performance_and_analysis(evaluated_test_data, augmented_data, prepared_data_details)
+        predict_on_single_image(augmented_data, prepared_data_details)
+        
+    except:
+        print("An error has occured in main function")
+        
+
+
+if __name__ == "__main__":
+    main()

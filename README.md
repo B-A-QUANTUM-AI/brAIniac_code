@@ -9,3 +9,6 @@ Rules for brAiniac code base
  - All functions used should return data in form of a dictionary
  - All dictionary keys must be all in capital letters format
  - 
+
+
+NOTE: Save file is too large for github

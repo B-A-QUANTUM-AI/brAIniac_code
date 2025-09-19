@@ -1,11 +1,19 @@
-# imports the sequential class to build neural networks layer by layer
-from keras.models import Sequential
+# global imports
+
+import os, random, numpy as np, tensorflow as tf    # tf for performance utilities
+import matplotlib.pyplot as plt 
+from keras.models import Sequential     # imports the sequential class to build neural networks layer by layer
+#Loads Keras function to read images directly from the image dataset folder
+from keras.utils import image_dataset_from_directory
+from keras import layers, metrics
+from keras.optimizers import Adam     
+from sklearn.metrics import confusion_matrix, classification_report
+from keras.layers import Conv2D, MaxPooling2D , Flatten , Dense, Dropout
+
 
 # create the sequential cnn model
 cnn_model= Sequential()
 
-# tf for performance utilities
-import os, random, numpy as np, tensorflow as tf
 
 # global seed variable used to ensure consistent shuffle/splits per run
 SEED = 2025
@@ -80,9 +88,6 @@ def data_loading_and_preprocessing(prepared_data):
         print("=" * 100)
         print("Loading Data ...")
         
-		#Loads Keras function to read images directly from the image dataset folder
-        from keras.utils import image_dataset_from_directory
-
 		# collect neccessary info from previous function
         TRAIN_DIRECTORY = prepared_data["TRAIN_DIRECTORY"]
         TEST_DIRECTORY = prepared_data["TEST_DIRECTORY"]
@@ -155,13 +160,10 @@ def data_augmentation(preprocessed_data):
         training_dataset = preprocessed_data["TRAINING_DATASET"]
         validation_dataset = preprocessed_data["VALIDATION_DATASET"]
         testing_dataset = preprocessed_data["TESTING_DATASET"]
-    
-        from keras import layers
 
 		# normalization algorithm for images
         rescale_pixels = layers.Rescaling(1./255)
-                
-        from keras.models import Sequential
+
 
 		# create a sequential model to create an augmentation alogrithm
         data_augmentation = Sequential (
@@ -228,8 +230,6 @@ def develop_cnn_model(prepared_data):
         print("Developing the Convolutional Neural Network model...")
 
         global cnn_model
-        
-        from keras.layers import Conv2D, MaxPooling2D , Flatten , Dense, Dropout
 
         CLASS_NAMES = prepared_data["CLASS_NAMES"]
 
@@ -272,8 +272,6 @@ def develop_cnn_model(prepared_data):
         # dense to output for each of the 4 classes
         cnn_model.add( Dense(len(CLASS_NAMES), activation="softmax")  )
             
-        from keras import metrics
-        from keras.optimizers import Adam
 
         #adam - adaptive optimization algorithm
 		# indicate performance metrics to track
@@ -305,8 +303,6 @@ def train_cnn_model(augumented_data):
         training_dataset = augumented_data["TRAINING_DATASET"]
         validation_dataset = augumented_data["VALIDATION_DATASET"]
 
-        from keras.models import Sequential
-
 		# a historical version of the trained model is to be stored
         trained_cnn_model_history = cnn_model.fit(training_dataset, validation_data=validation_dataset,  epochs=20, verbose=1)
 
@@ -336,10 +332,6 @@ def evaluation_and_prediction(augumented_data): # evaluate and predict on test d
         global cnn_model # access the global cnn_model variable
         
         testing_dataset = augumented_data["TESTING_DATASET"] # get test data from augumented data
-        
-        import matplotlib.pyplot as plt
-        
-        import numpy as np
 
         loss, accuracy, precision, recall = cnn_model.evaluate(testing_dataset, verbose=0) # verbose 0 to avoid too much output
         # Loss : Measures how far off the model's predictions are from the actual labels. Lower is better.
@@ -380,10 +372,6 @@ def model_performance_and_analysis(evaluated_data, augumented_data, data_prepara
         predictions = evaluated_data["PREDICTIONS"]
         testing_dataset = augumented_data["TESTING_DATASET"]
         CLASS_NAMES = data_preparation_details["CLASS_NAMES"]
-        
-        import numpy as np
-        
-        from sklearn.metrics import confusion_matrix, classification_report
 
 		# converts predictions to point numbers 
         y_predictions = np.argmax(predictions, axis=1)
@@ -413,8 +401,6 @@ def predict_on_single_image(augumented_data, data_preparation_details):
         CLASS_NAMES = data_preparation_details["CLASS_NAMES"] # class names in the dataset
         BATCH_SIZE = data_preparation_details["BATCH_SIZE"] # batch size used during data loading
         
-        import numpy as np
-        
         while True : 
             i = np.random.randint(0, BATCH_SIZE) # random batch index
             
@@ -431,8 +417,6 @@ def predict_on_single_image(augumented_data, data_preparation_details):
             prediction_index = int(np.argmax(image_probability)) # get the predicted class index by taking the index of the max probability
             prediction_name = CLASS_NAMES[prediction_index] # get the predicted class name from class index
             confidence_score = float(image_probability[prediction_index]) # get the confidence score for the predicted class
-            
-            import matplotlib.pyplot as plt
             
             plt.imshow(random_image) # display the random image
             plt.axis("off") # turn off axis
@@ -455,7 +439,6 @@ def predict_on_single_image(augumented_data, data_preparation_details):
 def main():
     try:
         
-        import os
         
         MODEL_FILE = "brainiac_cnn_86.keras"
         

@@ -214,7 +214,7 @@ def develop_cnn_model(prepared_data):
 
         global cnn_model
         
-        from keras.layers import Conv2D, MaxPooling2D , Flatten , Dense, Dropout, BatchNormalization
+        from keras.layers import Conv2D, MaxPooling2D , Flatten , Dense, Dropout
 
         CLASS_NAMES = prepared_data["CLASS_NAMES"]
         
